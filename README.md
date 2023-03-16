@@ -37,6 +37,10 @@ pip install -r requirements.txt
 Usage demo:
 
 
+https://user-images.githubusercontent.com/69969517/225501227-2253ea6e-d275-46dd-a99b-c6e9aa8fd64d.mp4
+
+
+
 ## Contributing
 As a private Challenge, Pull Request are welcome but just for possible improvements, comments and suggestions.
 
