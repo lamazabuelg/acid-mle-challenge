@@ -34,8 +34,8 @@ def train_binary_classification_model(
     model_name: Optional[str] = None,
     destination_storage_name: Optional[str] = None,
     model_custom_params: Optional[Dict] = None,
-    grid_search_cv_params: Optional[Dict] = None,
     grid_search_cv: Optional[bool] = False,
+    grid_search_cv_params: Optional[Dict] = None,
     train_test_split_data: Optional[bool] = True,
     random_state: Optional[int] = None,
     shuffle_data: Optional[bool] = True,
@@ -51,21 +51,21 @@ def train_binary_classification_model(
 
         model_name (Optional[str]): Name of the model to train. Must be one of the following: 'log-reg' (for LogisticRegression), 'xgb' (for XGBoost Classifier). If None, is setted to 'xgb'.
 
-        destination_storage_name (Optional[str]): Output filename to save into src/models/ folder. If None, is setted to model_name + current_datetime in format '%Y-%m-%d-%H%M'.
+        destination_storage_name (Optional[str]): Output filename to save into src/models/ folder. For example 'XGB_random_state10_learning_rate1-4'. If None, is setted to model_name + current_datetime in format '%Y-%m-%d-%H%M'.
 
-        model_custom_params (Optional[Dict]): _description_
+        model_custom_params (Optional[Dict]): Custom parameters for selected model_name. For example for 'log-reg' model: {"penalty":"l2", "dual": True}. If None, model is going to train with its own default parameters.
 
-        grid_search_cv_params (Optional[Dict]): _description_
+        grid_search_cv (Optional[bool], optional): If True, selected model is going to be optimized by GridSearchCV function of scikit-learn. Likewise, grid_search_cv_params must be given if grid_search_cv is True. Defaults to False.
 
-        grid_search_cv (Optional[bool], optional): _description_. Defaults to False.
+        grid_search_cv_params (Optional[Dict]): Dictionary of settings for GridSearchCV hiper-parameter optimization. If grid_search_cv is True, this field is mandatory. For example: {param_grid: {"learning_rate": [0.01,0.05, 0.1],"n_estimators": [50, 100, 150],"subsample": [0.5, 0.9]},"cv": 2,"n_jobs": -1,"verbose": 1}. Defaults to None.
 
-        train_test_split_data (Optional[bool], optional): _description_. Defaults to True.
+        train_test_split_data (Optional[bool], optional): If input data must be splitted in train-test batches (66% - 33% respectively) for model training or if not. Defaults to True.
 
-        random_state (Optional[int]): _description_. Defaults to None.
+        random_state (Optional[int]): For reproducible runs. Defaults to None.
 
-        shuffle_data (Optional[bool], optional): _description_. Defaults to True.
+        shuffle_data (Optional[bool], optional): If input data as pd.DataFrame must be shuffled (sklearn.utils.shuffle: Shuffle arrays or sparse matrices in a consistent way.). Defaults to True.
 
-        endpoint_test_mode (Optional[bool], optional): If True, just take the first 1000 records in input file to train model. Defaults to False.
+        endpoint_test_mode (Optional[bool], optional): If True, just take the first 1000 records in input file to train model. This option helps for faster tests of the endpoint. Defaults to False.
     """
     try:
         created = train_binary_cls_model(
@@ -74,8 +74,8 @@ def train_binary_classification_model(
             model_name,
             destination_storage_name,
             model_custom_params,
-            grid_search_cv_params,
             grid_search_cv,
+            grid_search_cv_params,
             train_test_split_data,
             random_state,
             shuffle_data,
