@@ -1,6 +1,6 @@
 from typing import List, Optional, Dict
 from fastapi import APIRouter, HTTPException, status
-from scripts.models import train_binary_cls_model
+from scripts.models import get_model_filenames, train_binary_cls_model
 
 models_router = APIRouter()
 
@@ -12,9 +12,14 @@ models_router = APIRouter()
     summary="Get all models available for consumption.",
 )
 def get_all_models():
+    """Given the models directory: src/models, this endpoint returns a list of model filenames available for use.
 
+    Returns:
+        List: model filenames. For example: ["my_model1.pkl", "my_model2.pkl"]
+    """
     try:
-        return "Hola mundo!"
+        files = get_model_filenames()
+        return files
     except HTTPException as H:
         raise H
     except Exception as E:

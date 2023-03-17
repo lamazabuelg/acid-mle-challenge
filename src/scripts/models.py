@@ -6,7 +6,7 @@ import warnings
 import settings
 from datetime import datetime
 from typing import List, Optional, Dict
-from fastapi import APIRouter, HTTPException, status
+from fastapi import HTTPException, status
 from utils.functions import folder_inspection
 from sklearn.utils import shuffle
 from sklearn.linear_model import LogisticRegression
@@ -17,6 +17,11 @@ warnings.filterwarnings("ignore")
 path_base = settings.PATH_BASE
 files_path = f"{path_base}\\src\\files"
 models_path = f"{path_base}\\src\\models"
+
+
+def get_model_filenames():
+    result = folder_inspection(models_path)
+    return result
 
 
 def train_binary_cls_model(
