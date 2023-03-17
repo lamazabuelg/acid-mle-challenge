@@ -16,12 +16,54 @@ from xgboost import XGBClassifier
 warnings.filterwarnings("ignore")
 path_base = settings.PATH_BASE
 files_path = f"{path_base}\\src\\files"
+if not os.path.isdir(files_path):
+    os.mkdir(files_path)
 models_path = f"{path_base}\\src\\models"
+if not os.path.isdir(models_path):
+    os.mkdir(models_path)
 
 
 def get_model_filenames():
     result = folder_inspection(models_path)
     return result
+
+
+def make_predictions(
+    model_filename: str,
+    input_path_file: Optional[str],
+    input_row: Optional[Dict],
+):
+    try:
+        # Review if args are coherent
+        if input_path_file is None and (input_row is None or len(input_row) == 0):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="One of the params 'input_path_file' or 'input_row' must be passed.",
+            )
+
+        # Load Model
+        with open(f"{models_path}\\{model_filename}.pkl", mode="rb") as file:
+            model = pickle.load(file)
+
+        # Input Data
+        if input_row is not None and len(input_row) > 0:
+            input_data = pd.DataFrame(input_row)
+        else:
+            input_data = pd.read_csv(input_path_file)
+        ## Getting Dummies from categorical features
+        # ToDo no pedir el input_row procesado en dummies sino pedirlo simple y obtener las dummies aca.
+        # ToDo convertir a funcion recibir el dataframe sin procesar y devolverlo listo para entrar al .predict()
+        # ToDo implementar la funcion anterior en el enpoint POST de entrenamiento del modelo
+
+        # Predict
+        predictions = model.predict(input_data)
+        filename_output = f"{files_path}\\output\\{datetime.now().strftime(format='%Y-%m-%d-%H%M')}_{model_filename}_predictions.csv"
+        pd.DataFrame(predictions).to_csv(filename_output, index=False)
+        return status.HTTP_201_CREATED
+    except HTTPException as H:
+        raise H
+    except Exception as E:
+        raise E
 
 
 def train_binary_cls_model(
@@ -63,7 +105,7 @@ def train_binary_cls_model(
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
         # model_name
-        if model_name not in settings.MODELS_ALLOWED:
+        if model_name is not None and model_name not in settings.MODELS_ALLOWED:
             logging.error(
                 f"model_name got unexpected value. Possible models are: {settings.MODELS_ALLOWED}"
             )
@@ -160,8 +202,6 @@ def train_binary_cls_model(
         logging.info(
             f"Saving trained model as {destination_storage_name}.pkl into src/models/."
         )
-        if not os.path.isdir(models_path):
-            os.mkdir(models_path)
         with open(f"{models_path}\\{destination_storage_name}.pkl", mode="wb") as file:
             pickle.dump(model_fit, file)
         return status.HTTP_201_CREATED

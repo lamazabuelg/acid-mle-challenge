@@ -1,6 +1,6 @@
 from typing import List, Optional, Dict
 from fastapi import APIRouter, HTTPException, status
-from scripts.models import get_model_filenames, train_binary_cls_model
+from scripts.models import get_model_filenames, make_predictions, train_binary_cls_model
 
 models_router = APIRouter()
 
@@ -20,6 +20,43 @@ def get_all_models():
     try:
         files = get_model_filenames()
         return files
+    except HTTPException as H:
+        raise H
+    except Exception as E:
+        raise E
+
+
+# GET
+@models_router.get(
+    "/models/predict",
+    tags=["Models"],
+    status_code=status.HTTP_200_OK,
+    summary="Given a pre-trained model, use it for classify each line of the input data and predict if the flight is probable to be delayed or not.",
+)
+def get_predictions(
+    model_filename: str,
+    input_path_file: Optional[str] = None,
+    input_row: Optional[Dict] = None,
+):
+    """Given one of the models in the directory src/models, this endpoint writes a .csv file with predictions as src/files/output/{current_datetime}--{model_filename}--predictions.csv.
+
+    Args:
+        model_filename (str): One of the available models in directory src/models/.
+
+        input_path_file (Optional[str], optional): For multiple prediction purposes, pass here the path to find the file to take as input for making predictions. Just one of input_path_file or input_row must be passed. For example: src/files/input/test_batch.csv. Defaults to None.
+
+        input_row (Optional[Dict], optional): For individual prediction purposes, pass here the dictionary as input for making predictions. Just one of input_path_file or input_row must be passed. For example: {"OPERA_Aerolineas Argentinas": 0, "OPERA_Aeromexico": 0, "OPERA_Air Canada": 0, "OPERA_Air France": 0, "OPERA_Alitalia": 0, "OPERA_American Airlines": 0, "OPERA_Austral": 0, "OPERA_Avianca": 0, "OPERA_British Airways": 0, "OPERA_Copa Air": 0, "OPERA_Delta Air": 0, "OPERA_Gol Trans": 0, "OPERA_Grupo LATAM": 1, "OPERA_Iberia": 0, "OPERA_JetSmart SPA": 0, "OPERA_K.L.M.": 0, "OPERA_Lacsa": 0, "OPERA_Latin American Wings": 0, "OPERA_Oceanair Linhas Aereas": 0, "OPERA_Plus Ultra Lineas Aereas": 0, "OPERA_Qantas Airways": 0, "OPERA_Sky Airline": 0, "OPERA_United Airlines": 0, "TIPOVUELO_I": 1, "TIPOVUELO_N": 0, "MES_1": 0, "MES_2": 0, "MES_3": 0, "MES_4": 0, "MES_5": 0, "MES_6": 0, "MES_7": 0, "MES_8": 0, "MES_9": 1, "MES_10": 0, "MES_11": 0, "MES_12": 0}. Defaults to None.
+
+    Returns:
+       status: 201 if the ...predictions.csv file was created succesfully into src/files/output/.
+    """
+    try:
+        created = make_predictions(
+            model_filename,
+            input_path_file,
+            input_row,
+        )
+        return created
     except HTTPException as H:
         raise H
     except Exception as E:
