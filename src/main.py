@@ -5,10 +5,9 @@ if sys.platform == "win32":
 
     path_root = Path(__file__).parents[1]
     sys.path.append(str(path_root))
-    path_root = Path(__file__).parents[2]
-    sys.path.append(str(path_root))
 
 import uvicorn
+import logging
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 
@@ -16,6 +15,23 @@ import settings
 
 from endpoints.files import files_router
 from endpoints.models import models_router
+
+# create logger
+logger = logging.getLogger(__file__)
+logger.setLevel(logging.INFO)
+
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+
+# create formatter
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
+# add formatter to ch
+ch.setFormatter(formatter)
+
+# add ch to logger
+logger.addHandler(ch)
 
 app = FastAPI(
     title="Luis Ángel Mazabuel García - Machine Learning Engineer Challenge",

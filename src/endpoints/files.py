@@ -30,7 +30,9 @@ def all_file_names(path: Optional[str] = None):
     try:
         files = get_all_file_names(path)
         return files
-    except HTTPException:
+    except HTTPException as H:
+        raise H
+    except:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -52,7 +54,9 @@ def download_file_by_name(path: Optional[str] = None):
     try:
         file_to_download = download_from_filename(path)
         return file_to_download
-    except HTTPException:
+    except HTTPException as H:
+        raise H
+    except:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -100,7 +104,7 @@ def create_additional_features(
 
         generate_both_files (bool, optional): If user wants to generate both dataset_SCL_complete.csv and synthetic_features.csv. Defaults to True.
 
-        generate_files (Optional[List], optional): If generate_both_files. Select 'complete' for just having dataset_SCL_complete.csv or 'new_features' for just having synthetic_features.csv file. Defaults to None.
+        generate_files (Optional[List], optional): If generate_both_files is False. Select 'complete' for just having dataset_SCL_complete.csv or 'new_features' for just having synthetic_features.csv file. Defaults to None.
 
         test_mode (bool, optional): If user wants to run this endpoint in test mode. Test mode implies that it will be taken only the number of test_size records of .csv files. Defaults to False.
 
@@ -122,5 +126,9 @@ def create_additional_features(
             test_random_state,
         )
         return status.HTTP_200_OK
-    except Exception as E:
-        raise E
+    except HTTPException as H:
+        raise H
+    except:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )

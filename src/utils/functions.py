@@ -1,17 +1,23 @@
 import os
+import logging
 from datetime import datetime
+from fastapi import HTTPException, status
 from fastapi.responses import FileResponse
 
 
 def folder_inspection(path: str):
-    scan = [x for x in os.scandir(path)]
-    result = []
-    for obj in scan:
-        if str(obj).find(".") >= 0:
-            result.append(obj.name)
-        elif str(obj).find("_") < 0:
-            result.append({obj.name: folder_inspection(obj.path)})
-    return result
+    try:
+        scan = [x for x in os.scandir(path)]
+        result = []
+        for obj in scan:
+            if str(obj).find(".") >= 0:
+                result.append(obj.name)
+            elif str(obj).find("_") < 0:
+                result.append({obj.name: folder_inspection(obj.path)})
+        return result
+    except:
+        logging.error(f"Folder {path} couldn't be found.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
 
 def download_by_path(path: str):
