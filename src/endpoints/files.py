@@ -1,12 +1,12 @@
-# public libraries
-from typing import List, Optional
-from fastapi import APIRouter, HTTPException, status
-
-# own libraries
+from typing import Optional
+from fastapi import APIRouter, HTTPException, status, File, UploadFile
+from fastapi.responses import JSONResponse
+from schemas.files import CreateFeaturesSchema
 from scripts.files import (
     get_all_file_names,
     download_from_filename,
     create_features_from_base,
+    upload_new_file,
 )
 
 files_router = APIRouter()
@@ -16,16 +16,16 @@ files_router = APIRouter()
     "/files/all",
     tags=["Files"],
     status_code=status.HTTP_200_OK,
-    summary="Get the structure tree of a given path directory in the repository.",
+    summary="Get the directory info of path ../files in the repository.",
 )
 def all_file_names(path: Optional[str] = None):
-    """Given a path to search into the repository, this functions returns the structure of files inside that path.
+    """Given a folder to search into the ../files folder in repository, this functions returns the structure of files inside that folder path.
 
     Args:
-        path (Optional[str], optional): Desired Path to search. Defaults to /src/files folder in repo.
+        path (Optional[str], optional): Desired folder to watch. Defaults to /src/files folder in repo.
 
     Returns:
-        python dict: key:values where keys are folders and values are files with any extension.
+        Dict: key:values where keys are folders and values are files with any extension.
     """
     try:
         files = get_all_file_names(path)
@@ -43,13 +43,13 @@ def all_file_names(path: Optional[str] = None):
     "/files/download_by_name",
     tags=["Files"],
     status_code=status.HTTP_200_OK,
-    summary="Download a given pathfile of the repo's directory.",
+    summary="Download a given file of the 'src/files/' repo's directory.",
 )
-def download_file_by_name(path: Optional[str] = None):
-    """Given a path to search into the repository, this function download the selected file.
+def download_file_by_name(path: str):
+    """Given a folder to search into the ../files folder in repository, this functions returns the file for its downloading.
 
     Args:
-        path (Optional[str], optional): Desired Pathfile to download. Defaults to /src/files/input/dataset_SCL.csv folder in repo.
+        path (Optional[str], optional): Desired folder to watch. For example 'input/myfile.csv'.
     """
     try:
         file_to_download = download_from_filename(path)
@@ -64,20 +64,38 @@ def download_file_by_name(path: Optional[str] = None):
 
 # POST
 @files_router.post(
+    "/files/upload_file",
+    tags=["Files"],
+    status_code=status.HTTP_200_OK,
+    summary="Upload a file into 'src/files/input/' directory.",
+)
+def upload_file(file: UploadFile = File(...)):
+    """Given a path to search into the repository, this function download the selected file.
+
+    Args:
+        path (Optional[str], optional): Desired Pathfile to download. Defaults to /src/files/input/dataset_SCL.csv folder in repo.
+    """
+    try:
+        response = upload_new_file(file)
+        return response
+    except HTTPException as H:
+        raise H
+    except:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+# POST
+@files_router.post(
     "/files/create_additional_features",
     tags=["Files"],
     status_code=status.HTTP_200_OK,
     summary="With the dataset_SCL.csv file, generate dataset_SCL_complete.csv and synthetic_features.csv files in a directory path.",
+    response_model=CreateFeaturesSchema,
 )
-def create_additional_features(
-    destination_storage_name: Optional[str] = None,
-    generate_both_files: bool = True,
-    generate_files: list = None,
-    test_mode: Optional[bool] = False,
-    test_size: Optional[int] = 100,
-    test_random_state: Optional[int] = None,
-):
-    """This Endpoint takes the **dataset_SCL.csv** stored by default in path **src/files/input/dataset_SCL.csv** and generate the following column features:
+def create_additional_features(request_body: CreateFeaturesSchema):
+    """This Endpoint takes the **dataset_SCL.csv** stored by default in path **src/files/input/dataset_SCL.csv** and generate the following column features into **/src/files/output**:
 
         temporada_alta:
             - 1 if Fecha-I is between Dec-15 and Mar-03,
@@ -100,8 +118,6 @@ def create_additional_features(
 
     Args:
 
-        destination_storage_name (Optional[str]): Folder path to save files. Defaults to /src/files/output.
-
         generate_both_files (bool, optional): If user wants to generate both dataset_SCL_complete.csv and synthetic_features.csv. Defaults to True.
 
         generate_files (Optional[List], optional): If generate_both_files is False. Select 'complete' for just having dataset_SCL_complete.csv or 'new_features' for just having synthetic_features.csv file. Defaults to None.
@@ -114,21 +130,18 @@ def create_additional_features(
 
     Returns:
 
-        HTTPResponse
+        Dict: dataset_SCL_complete.csv content data.
     """
     try:
-        create_features_from_base(
-            destination_storage_name,
-            generate_both_files,
-            generate_files,
-            test_mode,
-            test_size,
-            test_random_state,
+        base_complete = create_features_from_base(
+            request_body.generate_both_files,
+            request_body.generate_files,
+            request_body.test_mode,
+            request_body.test_size,
+            request_body.test_random_state,
         )
-        return status.HTTP_200_OK
+        return JSONResponse(base_complete)
     except HTTPException as H:
         raise H
-    except:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
+    except Exception as E:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{E}")

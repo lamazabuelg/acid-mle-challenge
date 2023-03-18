@@ -1,11 +1,18 @@
 import os
+import pandas as pd
 import logging
 from datetime import datetime
 from fastapi import HTTPException, status
 from fastapi.responses import FileResponse
+from sklearn.preprocessing import MinMaxScaler
 
 
 def folder_inspection(path: str):
+    if os.path.isfile(path):
+        return HTTPException(
+            status_code=status.HTTP_204_NO_CONTENT,
+            detail=f"{os.path.basename(path)} isn't a folder path, but a file path. Nothing to inspect.",
+        )
     try:
         scan = [x for x in os.scandir(path)]
         result = []
@@ -16,14 +23,24 @@ def folder_inspection(path: str):
                 result.append({obj.name: folder_inspection(obj.path)})
         return result
     except:
-        logging.error(f"Folder {path} couldn't be found.")
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        logging.error(f"Folder {os.path.basename(path)} couldn't be found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Path '{os.path.basename(path)}' wasn't found into 'src/files/' directory.",
+        )
 
 
 def download_by_path(path: str):
-    filename = path.split("\\")[-1]
-    file_to_download = FileResponse(path=path, filename=filename)
-    return file_to_download
+    try:
+        filename = os.path.basename(path)
+        file_to_download = FileResponse(path=path, filename=filename)
+        return file_to_download
+    except:
+        logging.error(f"File {os.path.basename(path)} couldn't be found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Path '{os.path.basename(path)}' wasn't found into 'src/files/' directory.",
+        )
 
 
 def temporada_alta(fecha):
@@ -75,3 +92,56 @@ def get_periodo_dia(fecha):
         fecha_time > noche_min2 and fecha_time < noche_max2
     ):
         return "noche"
+
+
+def get_features_from_df(
+    df,
+    categorical_features: list = None,
+    numerical_features: list = None,
+    minmax_scaler: bool = False,
+):
+    categorical_output = pd.DataFrame([])
+    numerical_output = pd.DataFrame([])
+    if categorical_features is not None or len(categorical_features) > 0:
+        for feature in categorical_features:
+            if feature not in df.columns:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Feature {feature} isn't part of the df.columns {df.columns}",
+                )
+            # One Hot Encoding for Categorical features
+            categorical_output = pd.concat(
+                [
+                    pd.get_dummies(df[feature], prefix=feature)
+                    for feature in categorical_features
+                ],
+                axis=1,
+            )
+    if numerical_features is not None or len(numerical_features) > 0:
+        minmax_scaler = MinMaxScaler()
+        for feature in numerical_features:
+            if feature not in df.columns:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Feature {feature} isn't part of the df.columns {df.columns}",
+                )
+            if minmax_scaler:
+                # Min Max Scaler for Numerical features
+                numerical_output = pd.concat(
+                    [
+                        pd.DataFrame(
+                            minmax_scaler.fit_transform(
+                                df[feature].values.reshape(-1, 1)
+                            ),
+                            columns=[feature],
+                        )
+                        for feature in numerical_features
+                    ],
+                    axis=1,
+                )
+            else:
+                numerical_output = pd.concat(
+                    [df[feature] for feature in numerical_features],
+                    axis=1,
+                )
+    return pd.concat([categorical_output, numerical_output], axis=1)
