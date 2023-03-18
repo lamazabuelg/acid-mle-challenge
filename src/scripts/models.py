@@ -7,11 +7,12 @@ import settings
 from datetime import datetime
 from typing import List, Optional, Dict
 from fastapi import HTTPException, status
-from utils.functions import folder_inspection
 from sklearn.utils import shuffle
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.metrics import classification_report
 from xgboost import XGBClassifier
+from utils.functions import folder_inspection, get_features_from_df
 
 warnings.filterwarnings("ignore")
 path_base = settings.PATH_BASE
@@ -29,9 +30,13 @@ def get_model_filenames():
 
 
 def make_predictions(
-    model_filename: str,
-    input_path_file: Optional[str],
-    input_row: Optional[Dict],
+    model_filename,
+    input_path_file,
+    input_row,
+    categorical_features,
+    numerical_features,
+    minmax_scaler_numerical_f,
+    label_test,
 ):
     try:
         # Review if args are coherent
@@ -50,16 +55,29 @@ def make_predictions(
             input_data = pd.DataFrame(input_row)
         else:
             input_data = pd.read_csv(input_path_file)
-        ## Getting Dummies from categorical features
-        # ToDo no pedir el input_row procesado en dummies sino pedirlo simple y obtener las dummies aca.
-        # ToDo convertir a funcion recibir el dataframe sin procesar y devolverlo listo para entrar al .predict()
-        # ToDo implementar la funcion anterior en el enpoint POST de entrenamiento del modelo
+        ## Getting features
+        X_test = get_features_from_df(
+            df=input_data,
+            categorical_features=categorical_features,
+            numerical_features=numerical_features,
+            minmax_scaler=minmax_scaler_numerical_f,
+        )
+        if label_test is not None:
+            if label_test not in input_data.columns:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"label_test param '{label_test}' was not found in input data colums: {list(input_data.columns)}",
+                )
+        y_test = label_test
 
         # Predict
-        predictions = model.predict(input_data)
-        filename_output = f"{files_path}\\output\\{datetime.now().strftime(format='%Y-%m-%d-%H%M')}_{model_filename}_predictions.csv"
-        pd.DataFrame(predictions).to_csv(filename_output, index=False)
-        return status.HTTP_201_CREATED
+        predictions = model.predict(X_test)
+        if y_test is not None or len(y_test) > 0:
+            filename_output = f"{files_path}\\output\\{datetime.now().strftime(format='%Y-%m-%d-%H%M')}_{model_filename}_predictions.csv"
+            pd.DataFrame(predictions).to_csv(filename_output, index=False)
+            return classification_report(y_true=input_data[y_test], y_pred=predictions)
+        else:
+            return status.HTTP_201_CREATED
     except HTTPException as H:
         raise H
     except Exception as E:
@@ -69,6 +87,10 @@ def make_predictions(
 def train_binary_cls_model(
     input_data_filename_path: Optional[str],
     features_filter: Optional[List],
+    categorical_features: Optional[List],
+    numerical_features: Optional[List],
+    minmax_scaler_numerical_f: Optional[bool],
+    label: Optional[str],
     model_name: Optional[str],
     destination_storage_name: Optional[str],
     model_custom_params: Optional[Dict],
@@ -77,6 +99,7 @@ def train_binary_cls_model(
     train_test_split_data: Optional[bool],
     random_state: Optional[int],
     shuffle_data: Optional[bool],
+    shuffle_features: Optional[List],
     endpoint_test_mode: Optional[bool],
 ):
     try:
@@ -129,24 +152,22 @@ def train_binary_cls_model(
         ## Shuffle
         if shuffle_data:
             data = shuffle(
-                data[["OPERA", "MES", "TIPOVUELO", "SIGLADES", "DIANOM", "atraso_15"]],
+                data[shuffle_features],
                 random_state=random_state,
             )
-            logging.info("Data shuffled data succesfully!")
-        X = pd.concat(
-            [
-                pd.get_dummies(data["OPERA"], prefix="OPERA"),
-                pd.get_dummies(data["TIPOVUELO"], prefix="TIPOVUELO"),
-                pd.get_dummies(data["MES"], prefix="MES"),
-            ],
-            axis=1,
+            logging.info("Data shuffled succesfully!")
+        X = get_features_from_df(
+            df=data,
+            categorical_features=categorical_features,
+            numerical_features=numerical_features,
+            minmax_scaler=minmax_scaler_numerical_f,
         )
-        y = data["atraso_15"]
+        y = data[label]
 
         # Features selection
         if features_filter is not None and len(features_filter) > 0:
             logging.info(f"Train model only with features: [{features_filter}].")
-            X[features_filter]
+            X = X[features_filter]
 
         # Train-test Split
         if train_test_split_data:
@@ -208,4 +229,4 @@ def train_binary_cls_model(
     except HTTPException as H:
         raise H
     except Exception as E:
-        raise E
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, details=f"{E}")
