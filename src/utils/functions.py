@@ -1,4 +1,5 @@
 import os
+import re
 import pandas as pd
 import logging
 from datetime import datetime
@@ -103,20 +104,23 @@ def get_features_from_df(
     categorical_output = pd.DataFrame([])
     numerical_output = pd.DataFrame([])
     if categorical_features is not None or len(categorical_features) > 0:
+        # categorical_feature exist in DataFrame
         for feature in categorical_features:
-            if feature not in df.columns:
+            if feature not in list(
+                set([re.sub(r"_.*", "", col) for col in df.columns])
+            ):
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail=f"Feature {feature} isn't part of the df.columns {df.columns}",
                 )
-            # One Hot Encoding for Categorical features
-            categorical_output = pd.concat(
-                [
-                    pd.get_dummies(df[feature], prefix=feature)
-                    for feature in categorical_features
-                ],
-                axis=1,
-            )
+        # One Hot Encoding for Categorical features
+        categorical_output = pd.concat(
+            [
+                pd.get_dummies(df[feature], prefix=feature)
+                for feature in categorical_features
+            ],
+            axis=1,
+        )
     if numerical_features is not None or len(numerical_features) > 0:
         minmax_scaler = MinMaxScaler()
         for feature in numerical_features:

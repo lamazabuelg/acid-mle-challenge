@@ -1,12 +1,13 @@
 from typing import Optional
 from fastapi import APIRouter, HTTPException, status, File, UploadFile
 from fastapi.responses import JSONResponse
-from schemas.files import CreateFeaturesSchema
+from schemas.files import CreateFeaturesSchema, TrainTestSplitSchema
 from scripts.files import (
     get_all_file_names,
     download_from_filename,
     create_features_from_base,
     upload_new_file,
+    split_train_test,
 )
 
 files_router = APIRouter()
@@ -140,7 +141,51 @@ def create_additional_features(request_body: CreateFeaturesSchema):
             request_body.test_size,
             request_body.test_random_state,
         )
-        return JSONResponse(base_complete)
+        return JSONResponse(status_code=status.HTTP_200_OK, content=base_complete)
+    except HTTPException as H:
+        raise H
+    except Exception as E:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{E}")
+
+
+# POST
+@files_router.post(
+    "/files/train_test_split",
+    tags=["Files"],
+    status_code=status.HTTP_200_OK,
+    summary="Generate 'X_train', 'X_test', 'y_train' and 'y_test' files into 'src/files/output/",
+    response_model=TrainTestSplitSchema,
+)
+def train_test_split(request_body: TrainTestSplitSchema):
+    """Given a structured data_filename.csv file into 'src/files/', returns a dictionary with four keys: 'X_train', 'X_test', 'y_train' and 'y_test'.
+    Likewise it save each part of returned dictionary as a .csv file into 'src/files/output/' directory.
+
+    Args:
+        data_filename: str. Filename to split into 'src/files/' directory.
+        features_filter (Optional[List], optional): _description_. Defaults to Field(default=None).
+        categorical_features (Optional[List], optional): _description_. Defaults to Field(default=["OPERA", "MES", "TIPOVUELO"]).
+        numerical_features (Optional[List], optional): _description_. Defaults to Field(default=None).
+        minmax_scaler_numerical_f (Optional[bool], optional): _description_. Defaults to Field(default=False).
+        label (Optional[str], optional): _description_. Defaults to Field(default="atraso_15").
+        shuffle_data (Optional[bool], optional): _description_. Defaults to Field(default=True).
+        shuffle_features (Optional[List], optional): _description_. Defaults to Field( default=["OPERA", "MES", "TIPOVUELO", "SIGLADES", "DIANOM", "atraso_15"] ).
+        sample_data (Optional[int], optional): _description_. Defaults to Field(default=None).
+        random_state (Optional[int], optional): _description_. Defaults to Field(default=None).
+    """
+    try:
+        response = split_train_test(
+            request_body.data_filename,
+            request_body.features_filter,
+            request_body.categorical_features,
+            request_body.numerical_features,
+            request_body.minmax_scaler_numerical_f,
+            request_body.label,
+            request_body.shuffle_data,
+            request_body.shuffle_features,
+            request_body.sample_data,
+            request_body.random_state,
+        )
+        return JSONResponse(status_code=status.HTTP_200_OK, content=response)
     except HTTPException as H:
         raise H
     except Exception as E:

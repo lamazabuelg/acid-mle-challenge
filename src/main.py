@@ -34,8 +34,8 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 app = FastAPI(
-    title="Luis Ángel Mazabuel García - Machine Learning Engineer Challenge",
-    description="Service to manage Data Scientist's models. This was builed by Luis Ángel Mazabuel García (Data Scientist & Machine Learning Engineer) for the Machine Learning Engineer Challenge of ACID Labs.",
+    title="Machine Learning Engineer Challenge - Luis Ángel Mazabuel García",
+    description="Service to manage Data Scientist's models. Builded by Luis Ángel Mazabuel García (Data Scientist & Machine Learning Engineer) for the Machine Learning Engineer Challenge of ACID Labs.",
     version=settings.APP_VERSION,
 )
 

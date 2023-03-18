@@ -1,18 +1,23 @@
-from typing import List, Optional, Dict
 from fastapi import APIRouter, HTTPException, status
+from fastapi.responses import JSONResponse
 from schemas.models import PredictionSchema, TrainBinaryClassificationSchema
-from scripts.models import get_model_filenames, make_predictions, train_binary_cls_model
+from scripts.models import (
+    get_model_filenames,
+    make_predictions,
+    train_binary_cls_model,
+    model_classification_report,
+)
 
 models_router = APIRouter()
 
 # GET
 @models_router.get(
-    "/models/all",
+    "/models/all_models",
     tags=["Models"],
     status_code=status.HTTP_200_OK,
     summary="Get all models available for consumption.",
 )
-def get_all_models():
+def all_models():
     """Given the models directory: src/models, this endpoint returns a list of model filenames available for use.
 
     Returns:
@@ -27,6 +32,28 @@ def get_all_models():
         raise E
 
 
+# GET
+@models_router.get(
+    "/models/classification_report",
+    tags=["Models"],
+    status_code=status.HTTP_200_OK,
+    summary="Get all models available for consumption.",
+)
+def classification_report(y_real_filename: str, y_predicted_filename: str):
+    """Given a model of directory 'src/models', this endpoint returns some metrics evaluating that model with a given y_train and y_test batches from 'src/files/output'.
+
+    Returns:
+        List: model filenames. For example: ["my_model1.pkl", "my_model2.pkl"]
+    """
+    try:
+        report = model_classification_report(y_real_filename, y_predicted_filename)
+        return JSONResponse(status_code=status.HTTP_200_OK, content=report)
+    except HTTPException as H:
+        raise H
+    except Exception as E:
+        raise E
+
+
 # POST
 @models_router.post(
     "/models/predict",
@@ -35,13 +62,13 @@ def get_all_models():
     summary="Given a pre-trained model, use it for classify each line of the input data and predict if the flight is probable to be delayed or not.",
     response_model=PredictionSchema,
 )
-def get_predictions(request_body: PredictionSchema):
+def predicti(request_body: PredictionSchema):
     """Given one of the models in the directory src/models, this endpoint writes a .csv file with predictions as src/files/output/{current_datetime}--{model_filename}--predictions.csv.
 
     Args:
         model_filename (str): One of the available models in directory src/models/.
 
-        input_path_file (Optional[str], optional): For multiple prediction purposes, pass here the path to find the file to take as input for making predictions. Just one of input_path_file or input_row must be passed. For example: src/files/input/test_batch.csv. Defaults to None.
+        input_file_name (Optional[str], optional): For multiple records prediction purposes, pass here the file name to take as input for making predictions. It must exist in folder 'src/files/input/'. Just one of input_path_file or input_row must be passed. For example: 'test_batch.csv'. Defaults to None.
 
         input_row (Optional[Dict], optional): For individual prediction purposes, pass here the dictionary as input for making predictions. Just one of input_path_file or input_row must be passed. For example: {"OPERA_Aerolineas Argentinas": 0, "OPERA_Aeromexico": 0, "OPERA_Air Canada": 0, "OPERA_Air France": 0, "OPERA_Alitalia": 0, "OPERA_American Airlines": 0, "OPERA_Austral": 0, "OPERA_Avianca": 0, "OPERA_British Airways": 0, "OPERA_Copa Air": 0, "OPERA_Delta Air": 0, "OPERA_Gol Trans": 0, "OPERA_Grupo LATAM": 1, "OPERA_Iberia": 0, "OPERA_JetSmart SPA": 0, "OPERA_K.L.M.": 0, "OPERA_Lacsa": 0, "OPERA_Latin American Wings": 0, "OPERA_Oceanair Linhas Aereas": 0, "OPERA_Plus Ultra Lineas Aereas": 0, "OPERA_Qantas Airways": 0, "OPERA_Sky Airline": 0, "OPERA_United Airlines": 0, "TIPOVUELO_I": 1, "TIPOVUELO_N": 0, "MES_1": 0, "MES_2": 0, "MES_3": 0, "MES_4": 0, "MES_5": 0, "MES_6": 0, "MES_7": 0, "MES_8": 0, "MES_9": 1, "MES_10": 0, "MES_11": 0, "MES_12": 0}. Defaults to None.
 
@@ -49,20 +76,18 @@ def get_predictions(request_body: PredictionSchema):
        status: 201 if the ...predictions.csv file was created succesfully into src/files/output/.
     """
     try:
-        created = make_predictions(
+        predictions = make_predictions(
             request_body.model_filename,
-            request_body.input_path_file,
-            request_body.input_row,
+            request_body.X_test_filename,
             request_body.categorical_features,
             request_body.numerical_features,
             request_body.minmax_scaler_numerical_f,
-            request_body.label_test,
         )
-        return created
+        return JSONResponse(status_code=status.HTTP_200_OK, content=predictions)
     except HTTPException as H:
-        return H
+        raise H
     except Exception as E:
-        return E
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{E}")
 
 
 # POST
@@ -121,25 +146,17 @@ def train_binary_classification_model(request_body: TrainBinaryClassificationSch
     """
     try:
         created = train_binary_cls_model(
-            request_body.input_data_filename_path,
-            request_body.features_filter,
-            request_body.categorical_features,
-            request_body.numerical_features,
-            request_body.minmax_scaler_numerical_f,
-            request_body.label,
+            request_body.X_train_filename,
+            request_body.y_train_filename,
             request_body.model_name,
-            request_body.destination_storage_name,
-            request_body.model_custom_params,
+            request_body.destination_model_name,
+            dict(request_body.model_custom_params),
             request_body.grid_search_cv,
-            request_body.grid_search_cv_params,
-            request_body.train_test_split_data,
+            dict(request_body.grid_search_cv_params),
             request_body.random_state,
-            request_body.shuffle_data,
-            request_body.shuffle_features,
-            request_body.endpoint_test_mode,
         )
-        return created
+        return JSONResponse(status_code=status.HTTP_201_CREATED, content=created)
     except HTTPException as H:
         raise H
     except Exception as E:
-        raise E
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{E}")
