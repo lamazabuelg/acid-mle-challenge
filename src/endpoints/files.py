@@ -5,7 +5,6 @@ from schemas.files import CreateFeaturesSchema, TrainTestSplitSchema
 from scripts.files import (
     get_all_file_names,
     download_from_filename,
-    delete_filename,
     create_features_from_base,
     upload_new_file,
     split_train_test,
@@ -176,31 +175,6 @@ def train_test_split(request_body: TrainTestSplitSchema):
             request_body.sample_data,
             request_body.random_state,
         )
-        return JSONResponse(status_code=status.HTTP_200_OK, content=response)
-    except HTTPException as H:
-        raise H
-    except Exception as E:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{E}")
-
-
-# DELETE
-@files_router.delete(
-    "/files/delete_by_name",
-    tags=["Files"],
-    status_code=status.HTTP_200_OK,
-    summary="Delete a given file of the 'src/files/' repo's directory.",
-)
-def delete_by_name(path: str):
-    """Given a file path to delete into the 'src/files/' folder in repository, this functions delete that file.
-
-    **Args:**
-        path (str): Desired file path to delete. For example 'input/myfile.csv'.
-
-    **Returns:**
-        str: Message informing if the process was made succesfully or not.
-    """
-    try:
-        response = delete_filename(path)
         return JSONResponse(status_code=status.HTTP_200_OK, content=response)
     except HTTPException as H:
         raise H
