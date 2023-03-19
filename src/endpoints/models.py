@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 from schemas.models import PredictionSchema, TrainBinaryClassificationSchema
 from scripts.models import (
     get_model_filenames,
+    delete_modelname,
     make_predictions,
     train_binary_cls_model,
     model_classification_report,
@@ -112,7 +113,7 @@ def train_binary_classification_model(request_body: TrainBinaryClassificationSch
     summary="Given a pre-trained model stored in 'src/models/' and data for make predictions, use it for classify each line of the input data and predict if the flight is probable to be delayed or not.",
     response_model=PredictionSchema,
 )
-def predicti(request_body: PredictionSchema):
+def predict(request_body: PredictionSchema):
     """Given one of the models in the directory 'src/models', this endpoint writes a .csv file with predictions as 'src/files/output/{model_filename}-predictions.csv'.
 
     **Args:**
@@ -131,6 +132,31 @@ def predicti(request_body: PredictionSchema):
             request_body.X_test_filename,
         )
         return JSONResponse(status_code=status.HTTP_200_OK, content=predictions)
+    except HTTPException as H:
+        raise H
+    except Exception as E:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{E}")
+
+
+# DELETE
+@models_router.delete(
+    "/models/delete_by_name",
+    tags=["Models"],
+    status_code=status.HTTP_200_OK,
+    summary="Delete a given model of the 'src/models/' repo's directory.",
+)
+def delete_by_name(path: str):
+    """Given a model path to delete into the 'src/models/' folder in repository, this functions delete that model.
+
+    **Args:**
+        path (str): Desired model path to delete. For example 'My_XGB_Classifier_model.pkl'.
+
+    **Returns:**
+        str: Message informing if the process was made succesfully or not.
+    """
+    try:
+        response = delete_modelname(path)
+        return JSONResponse(status_code=status.HTTP_200_OK, content=response)
     except HTTPException as H:
         raise H
     except Exception as E:
