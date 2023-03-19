@@ -1,0 +1,18 @@
+.astro
+.git
+.idea/
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+.ipynb_checkpoints
+venv
+.cache
+.git
+files/output/*
+.eggs/
+.pytest_cache/
+# .env
+.mypy_cache/
+.docker/
