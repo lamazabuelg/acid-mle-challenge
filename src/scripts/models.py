@@ -16,7 +16,7 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 from xgboost import XGBClassifier
-from utils.functions import folder_inspection, delete_by_path
+from utils.functions import folder_inspection
 
 warnings.filterwarnings("ignore")
 path_base = settings.PATH_BASE
@@ -31,14 +31,6 @@ if not os.path.isdir(models_path):
 def get_model_filenames():
     result = folder_inspection(models_path)
     return result
-
-
-def delete_modelname(
-    path: Optional[str],
-):
-    path = os.path.join(models_path, path)
-    deleted = delete_by_path(path)
-    return deleted
 
 
 def model_classification_report(y_test_filename, y_predicted_filename):

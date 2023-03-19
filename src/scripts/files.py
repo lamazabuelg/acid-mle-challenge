@@ -11,7 +11,6 @@ from sklearn.model_selection import train_test_split
 from utils.functions import (
     folder_inspection,
     download_by_path,
-    delete_by_path,
     temporada_alta,
     dif_min,
     get_periodo_dia,
@@ -59,15 +58,6 @@ def upload_new_file(file):
         file.file.close()
 
     return f"Successfully uploaded {file.filename}"
-
-
-def delete_filename(
-    path: Optional[str],
-):
-    get_all_file_names(path)
-    path = os.path.join(files_path, path)
-    deleted = delete_by_path(path)
-    return deleted
 
 
 def create_features_from_base(
