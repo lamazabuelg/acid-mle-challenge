@@ -139,7 +139,7 @@ def create_additional_features(request_body: CreateFeaturesSchema):
     "/files/train_test_split",
     tags=["Files"],
     status_code=status.HTTP_200_OK,
-    summary="Generate 'X_train', 'X_test', 'y_train' and 'y_test' files into 'src/files/output/",
+    summary="Generate 'X_train', 'X_test', 'y_train' and 'y_test' files into 'src/files/output/'.",
     response_model=TrainTestSplitSchema,
 )
 def train_test_split(request_body: TrainTestSplitSchema):

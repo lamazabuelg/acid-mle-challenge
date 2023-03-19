@@ -18,7 +18,7 @@ from utils.functions import (
 )
 
 path_base = settings.PATH_BASE
-files_path = os.path.join(path_base, "src", "files")
+files_path = os.path.join(path_base, "files")
 original_dataset_path = os.path.join(files_path, "input", "dataset_SCL.csv")
 if not os.path.isdir(files_path):
     os.mkdir(files_path)
