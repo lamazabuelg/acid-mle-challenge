@@ -14,18 +14,18 @@ files_router = APIRouter()
 
 # GET
 @files_router.get(
-    "/files/all",
+    "/files/all_files",
     tags=["Files"],
     status_code=status.HTTP_200_OK,
-    summary="Get the directory info of path ../files in the repository.",
+    summary="Get the directory info of a selected path into directory 'src/files/' in the repository.",
 )
 def all_file_names(path: Optional[str] = None):
-    """Given a folder to search into the ../files folder in repository, this functions returns the structure of files inside that folder path.
+    """Given a folder to search into the 'src/files/' folder in repository, this functions returns the structure of files inside that folder path.
 
-    Args:
-        path (Optional[str], optional): Desired folder to watch. Defaults to /src/files folder in repo.
+    **Args:**
+        path (Optional[str], optional): Desired folder to watch. Defaults to '/src/files/' folder in repo.
 
-    Returns:
+    **Returns:**
         Dict: key:values where keys are folders and values are files with any extension.
     """
     try:
@@ -33,10 +33,8 @@ def all_file_names(path: Optional[str] = None):
         return files
     except HTTPException as H:
         raise H
-    except:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
+    except Exception as E:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{E}")
 
 
 # GET
@@ -47,20 +45,21 @@ def all_file_names(path: Optional[str] = None):
     summary="Download a given file of the 'src/files/' repo's directory.",
 )
 def download_file_by_name(path: str):
-    """Given a folder to search into the ../files folder in repository, this functions returns the file for its downloading.
+    """Given a path to search into the 'src/files/' folder in repository, this functions returns the file for its downloading.
 
-    Args:
-        path (Optional[str], optional): Desired folder to watch. For example 'input/myfile.csv'.
+    **Args:**
+        path (str): Desired folder to watch. For example 'input/myfile.csv'.
+
+    **Returns:**
+        file: File for download locally.
     """
     try:
         file_to_download = download_from_filename(path)
         return file_to_download
     except HTTPException as H:
         raise H
-    except:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
+    except Exception as E:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{E}")
 
 
 # POST
@@ -71,20 +70,18 @@ def download_file_by_name(path: str):
     summary="Upload a file into 'src/files/input/' directory.",
 )
 def upload_file(file: UploadFile = File(...)):
-    """Given a path to search into the repository, this function download the selected file.
+    """Upload a file into 'src/files/input/' directory and let it be useful for latest use.
 
-    Args:
-        path (Optional[str], optional): Desired Pathfile to download. Defaults to /src/files/input/dataset_SCL.csv folder in repo.
+    **Args:**
+        file: File for upload in repo's directory '/src/files/'.
     """
     try:
         response = upload_new_file(file)
-        return response
+        return JSONResponse(status_code=status.HTTP_201_CREATED, content=response)
     except HTTPException as H:
         raise H
-    except:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
+    except Exception as E:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"{E}")
 
 
 # POST
@@ -92,45 +89,34 @@ def upload_file(file: UploadFile = File(...)):
     "/files/create_additional_features",
     tags=["Files"],
     status_code=status.HTTP_200_OK,
-    summary="With the dataset_SCL.csv file, generate dataset_SCL_complete.csv and synthetic_features.csv files in a directory path.",
+    summary="With the 'src/files/input/dataset_SCL.csv' file, generate 'src/files/output/dataset_SCL_complete.csv' and 'src/files/output/synthetic_features.csv' files in repo.",
     response_model=CreateFeaturesSchema,
 )
 def create_additional_features(request_body: CreateFeaturesSchema):
-    """This Endpoint takes the **dataset_SCL.csv** stored by default in path **src/files/input/dataset_SCL.csv** and generate the following column features into **/src/files/output**:
-
-        temporada_alta:
-            - 1 if Fecha-I is between Dec-15 and Mar-03,
+    """This Endpoint takes the **dataset_SCL.csv** stored by default in path 'src/files/input/dataset_SCL.csv' and generate the following column features into 'src/files/output/synthetic_features.csv':
+        **temporada_alta:**
+            1 if *Fecha-I* is between Dec-15 and Mar-03,
                 or between Jul-15 and Jul-31,
                 or Sep-11 and Sep-30;
-            - 0 otherwise.
+            0 otherwise.
+        **dif_min:** difference in minutes between *Fecha-O* and *Fecha-I*.
+        **atraso_15:**
+            1 if **dif_min** > 15,
+            0 otherwise.
+        **periodo_dia:** Given *Fecha-I*,
+            "mañana" if between 5:00 and 11:59,
+            "tarde" if between 12:00 and 18:59,
+            "noche" if between 19:00 and 4:59.
+        After generated, **synthetic_features.csv** is going to contain just these columns. While **dataset_SCL_complete.csv** is going to contain base **dataset_SCL.csv columns + synthetic_features.csv** columns.
 
-        dif_min: difference in minutes between Fecha-O and Fecha-I.
-
-        atraso_15:
-            - 1 if dif_min > 15,
-            - 0 otherwise.
-
-        periodo_dia: Given Fecha-I
-            - "mañana" if between 5:00 and 11:59
-            - "tarde" if between 12:00 and 18:59
-            - "noche" if between 19:00 and 4:59
-
-        After generated, synthetic_features.csv is going to contain just these columns. While dataset_SCL_complete.csv is going to contain base dataset_SCL.csv columns + synthetic_features.csv columns.
-
-    Args:
-
-        generate_both_files (bool, optional): If user wants to generate both dataset_SCL_complete.csv and synthetic_features.csv. Defaults to True.
-
-        generate_files (Optional[List], optional): If generate_both_files is False. Select 'complete' for just having dataset_SCL_complete.csv or 'new_features' for just having synthetic_features.csv file. Defaults to None.
-
-        test_mode (bool, optional): If user wants to run this endpoint in test mode. Test mode implies that it will be taken only the number of test_size records of .csv files. Defaults to False.
-
+    **Args:**
+        generate_both_files (bool, optional): If user wants to generate both **dataset_SCL_complete.csv** and **synthetic_features.csv**. Defaults to True.
+        generate_files (str, optional): If generate_both_files is False. Select 'complete' for just having **dataset_SCL_complete.csv** or 'new_features' for just having **synthetic_features.csv** file. Defaults to None.
+        test_mode (bool, optional): If user wants to run this endpoint in test mode. Test mode implies that process will be take only the number of test_size records of .csv files. Defaults to False.
         test_size (int, optional): Number of records to filter in test_mode. Default 100.
-
         test_random_state (int, optional): Random state number to reproduce code in several executions. Default None.
 
-    Returns:
-
+    **Returns:**
         Dict: dataset_SCL_complete.csv content data.
     """
     try:
@@ -160,17 +146,21 @@ def train_test_split(request_body: TrainTestSplitSchema):
     """Given a structured data_filename.csv file into 'src/files/', returns a dictionary with four keys: 'X_train', 'X_test', 'y_train' and 'y_test'.
     Likewise it save each part of returned dictionary as a .csv file into 'src/files/output/' directory.
 
-    Args:
-        data_filename: str. Filename to split into 'src/files/' directory.
-        features_filter (Optional[List], optional): _description_. Defaults to Field(default=None).
-        categorical_features (Optional[List], optional): _description_. Defaults to Field(default=["OPERA", "MES", "TIPOVUELO"]).
-        numerical_features (Optional[List], optional): _description_. Defaults to Field(default=None).
-        minmax_scaler_numerical_f (Optional[bool], optional): _description_. Defaults to Field(default=False).
-        label (Optional[str], optional): _description_. Defaults to Field(default="atraso_15").
-        shuffle_data (Optional[bool], optional): _description_. Defaults to Field(default=True).
-        shuffle_features (Optional[List], optional): _description_. Defaults to Field( default=["OPERA", "MES", "TIPOVUELO", "SIGLADES", "DIANOM", "atraso_15"] ).
-        sample_data (Optional[int], optional): _description_. Defaults to Field(default=None).
-        random_state (Optional[int], optional): _description_. Defaults to Field(default=None).
+    **Args:**
+        data_filename: str. Filename to split into 'src/files/' directory. For example 'output/dataset_SCL_complete.csv'.
+        features_filter (List, optional): List of features existing into the input file to filter X_train and X_test batches.
+            For example ['my_feature1', 'my_feature2']. If None, all file's features are going to be considered.
+        categorical_features (List, optional): List of features to be treated as categorical ones and do **One Hot Encoding** with it. Defaults to None.
+        numerical_features (List, optional): List of features to be treated as numerical ones and do **MinMax Scaling** with it ONLY if arg minmax_scaler_numerical_f is True. Defaults to None.
+        minmax_scaler_numerical_f (bool, optional): For numerical_features, apply a MinMax Scaling. Defaults to False.
+        label (str, optional): Label column in data to split in y_train and y_test batches. Defaults to "atraso_15".
+        shuffle_data (bool, optional): If data must be shuffled. Defaults to True.
+        shuffle_features (List, optional): List of features to shuffle. Defaults to ["OPERA", "MES", "TIPOVUELO", "SIGLADES", "DIANOM", "atraso_15"].
+        sample_data (int, optional): If not None, data is going to be sampled by this max number of records. Defaults to None.
+        random_state (int, optional): Random state for code replication, it applies to shuffle and sample args. If None, results are expected to be random. Defaults to None.
+
+    **Returns:**
+        Dict: With keys: 'X_train', 'X_test', 'y_train' and 'y_test'.
     """
     try:
         response = split_train_test(

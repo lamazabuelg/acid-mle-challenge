@@ -6,18 +6,12 @@ from pydantic import BaseModel, Field
 class PredictionSchema(BaseModel):
     model_filename: str = Field()
     X_test_filename: str = Field()
-    categorical_features: Optional[List] = Field()
-    numerical_features: Optional[List] = Field()
-    minmax_scaler_numerical_f: Optional[bool] = Field()
 
     class Config:
         schema_extra = {
             "example": {
                 "model_filename": "My_XGB_Classifier_model",
                 "X_test_filename": "dataset_SCL_complete-X_test.csv",
-                "categorical_features": ["OPERA", "MES", "TIPOVUELO"],
-                "numerical_features": [],
-                "minmax_scaler_numerical_f": False,
             },
         }
 

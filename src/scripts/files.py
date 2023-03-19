@@ -57,10 +57,7 @@ def upload_new_file(file):
     finally:
         file.file.close()
 
-    return {
-        "status_code": status.HTTP_201_CREATED,
-        "detail": f"Successfully uploaded {file.filename}",
-    }
+    return f"Successfully uploaded {file.filename}"
 
 
 def create_features_from_base(
