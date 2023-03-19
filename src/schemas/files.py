@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 class CreateFeaturesSchema(BaseModel):
     generate_both_files: bool = Field(default=True)
-    generate_files: Optional[List] = Field()
+    generate_files: Optional[str] = Field()
     test_mode: Optional[bool] = Field(default=False)
     test_size: Optional[int] = Field(default=100)
     test_random_state: Optional[int] = Field()
