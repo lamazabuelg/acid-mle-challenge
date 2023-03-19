@@ -6,3 +6,6 @@ __pycache__
 
 # Jupyter Checkpoints
 .ipynb_checkpoints
+
+# files/output
+files/output/*

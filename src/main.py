@@ -1,18 +1,8 @@
-import sys
-
-if sys.platform == "win32":
-    from pathlib import Path
-
-    path_root = Path(__file__).parents[1]
-    sys.path.append(str(path_root))
-
 import uvicorn
 import logging
+import settings
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
-
-import settings
-
 from endpoints.files import files_router
 from endpoints.models import models_router
 
@@ -50,4 +40,4 @@ async def root():
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")

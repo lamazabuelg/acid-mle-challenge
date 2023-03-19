@@ -19,11 +19,11 @@ from xgboost import XGBClassifier
 from utils.functions import folder_inspection
 
 warnings.filterwarnings("ignore")
-# path_base = settings.PATH_BASE
-files_path = os.path.join("src", "files")
+path_base = settings.PATH_BASE
+files_path = os.path.join(path_base, "files")
 if not os.path.isdir(files_path):
     os.mkdir(files_path)
-models_path = os.path.join("src", "models")
+models_path = os.path.join(path_base, "models")
 if not os.path.isdir(models_path):
     os.mkdir(models_path)
 
