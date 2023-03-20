@@ -11,11 +11,13 @@ This is a submition for the Machine Learning Engineer Challenge purposed by ACID
 ### API DEMO
 
 For better understandability of the servire the root path in the repository has a **ACID-mle-challenge_Demo_API_usage.ipynb** file where you can find an end-to-end test for several endpoints simulating the real use of the service. From managing files to configuring, developing, using and evaluating Data Science models.
+![image](https://user-images.githubusercontent.com/69969517/226226889-e2d0e522-0722-4195-81d3-cc090ed932c1.png)
 
 
 ### FASTAPI - SWAGGER UI
 
 For use the SWAGGER UI for the API just open this link in your browser: https://acid-mle-challenge-3skroqvvwa-ue.a.run.app/docs .
+![image](https://user-images.githubusercontent.com/69969517/226226985-f8b89565-d0e0-48d3-b22a-95094f0d15cb.png)
 
 ### PYTHON USAGE
 
