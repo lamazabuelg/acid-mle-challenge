@@ -87,7 +87,11 @@ def make_predictions(model_filename, X_test_filename):
         filename_output = os.path.join(
             files_path, "output", f"{model_filename}-predictions.csv"
         )
-        predictions.to_csv(filename_output, index=False)
+        predictions.to_csv(
+            filename_output,
+            index=False,
+            encoding="utf-8",
+        )
         logging.info(
             f"'{filename_output}.pkl' succesfully created in 'src/files/output/'."
         )

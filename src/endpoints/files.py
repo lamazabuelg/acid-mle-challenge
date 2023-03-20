@@ -118,7 +118,7 @@ def create_additional_features(request_body: CreateFeaturesSchema):
         test_random_state (int, optional): Random state number to reproduce code in several executions. Default None.
 
     **Returns:**
-        Dict: dataset_SCL_complete.csv content data.
+        str: Message informing if the process was made succesfully or not.
     """
     try:
         base_complete = create_features_from_base(
@@ -161,7 +161,7 @@ def train_test_split(request_body: TrainTestSplitSchema):
         random_state (int, optional): Random state for code replication, it applies to shuffle and sample args. If None, results are expected to be random. Defaults to None.
 
     **Returns:**
-        Dict: With keys: 'X_train', 'X_test', 'y_train' and 'y_test'.
+        str: Message informing if the process was made succesfully or not.
     """
     try:
         response = split_train_test(
@@ -192,8 +192,10 @@ def train_test_split(request_body: TrainTestSplitSchema):
 )
 def delete_by_name(path: str):
     """Given a file path to delete into the 'src/files/' folder in repository, this functions delete that file.
+
     **Args:**
         path (str): Desired file path to delete. For example 'input/myfile.csv'.
+
     **Returns:**
         str: Message informing if the process was made succesfully or not.
     """

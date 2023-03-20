@@ -105,18 +105,17 @@ def create_features_from_base(
         base.to_csv(
             os.path.join(destination_storage_folder, "dataset_SCL_complete.csv"),
             index=False,
+            encoding="utf-8",
         )
     if generate_both_files or "new_features" in files_to_generate:
         new_features.to_csv(
             os.path.join(destination_storage_folder, "synthetic_features.csv"),
             index=False,
+            encoding="utf-8",
         )
     base_nan = base[base.isin([np.nan, np.inf, -np.inf]).any(1)]
     base = base[~base.isin([np.nan, np.inf, -np.inf]).any(1)]
-    response = {
-        "values with nan": base_nan.fillna("").to_dict(orient="records"),
-        "values without nan": base.to_dict(orient="records"),
-    }
+    response = f'File(s) succesfully created: "values with nan": {len(base_nan)}, "values without nan": {len(base)}'
     return response
 
 
@@ -193,25 +192,24 @@ def split_train_test(
         X_train.to_csv(
             os.path.join(files_path, "output", f"{input_filename}-X_train.csv"),
             index=False,
+            encoding="utf-8",
         )
         X_test.to_csv(
             os.path.join(files_path, "output", f"{input_filename}-X_test.csv"),
             index=False,
+            encoding="utf-8",
         )
         y_train.to_csv(
             os.path.join(files_path, "output", f"{input_filename}-y_train.csv"),
             index=False,
+            encoding="utf-8",
         )
         y_test.to_csv(
             os.path.join(files_path, "output", f"{input_filename}-y_test.csv"),
             index=False,
+            encoding="utf-8",
         )
-        return {
-            "X_train": X_train.to_dict("records"),
-            "X_test": X_test.to_dict("records"),
-            "y_train": list(y_train),
-            "y_test": list(y_test),
-        }
+        return f'X and y files succesfully created with lengths: "X_train": {len(X_train)}, "X_test": {len(X_test)}, "y_train": {len(y_train)}, "y_test": {len(y_test)}'
     except HTTPException as H:
         raise H
     except Exception as E:
