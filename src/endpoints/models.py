@@ -81,7 +81,10 @@ def train_binary_classification_model(request_body: TrainBinaryClassificationSch
             scikit-learn. Likewise, grid_search_cv_params must be given if grid_search_cv is True. Defaults to False.
         grid_search_cv_params (Dict, optional): Dictionary of settings for GridSearchCV hiper-parameter optimization. If grid_search_cv is True, this field is mandatory.
             For example: {param_grid: {"learning_rate": [0.01,0.05, 0.1],"n_estimators": [50, 100, 150],"subsample": [0.5, 0.9]},"cv": 2,"n_jobs": -1,"verbose": 1}. Defaults to None.
-        random_state (int): Random state for code replication. If None, results are expected to be random. Defaults to None.
+        random_state (int, optional): Random state for code replication. If None, results are expected to be random. Defaults to None.
+        balancing_methodology (str, optional): Methodology to handle with inbalanced data: 'balanced' if user wants to balance label for give more value to smaller category and less
+            value to higher category proportionally; 'under' if user wants to cut the higher category to the level of smaller one (randomly); and 'over' if user wants to generate random
+            features representing the smaller category to reach the level of higher one. If None, process won't handle with inbalance. Default to None.
 
     **Returns:**
        JSONResponse: With message of success creation of model.
@@ -96,6 +99,7 @@ def train_binary_classification_model(request_body: TrainBinaryClassificationSch
             request_body.grid_search_cv,
             dict(request_body.grid_search_cv_params),
             request_body.random_state,
+            request_body.balancing_methodology,
         )
         return JSONResponse(status_code=status.HTTP_201_CREATED, content=created)
     except HTTPException as H:

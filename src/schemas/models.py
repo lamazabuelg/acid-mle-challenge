@@ -34,6 +34,7 @@ class TrainBinaryClassificationSchema(BaseModel):
     grid_search_cv: Optional[bool] = Field(default=False)
     grid_search_cv_params: Optional[GridSearchCVParamsSchema] = Field(default=None)
     random_state: Optional[int] = Field(default=None)
+    balancing_methodology: Optional[str] = Field(default=None)
 
     class Config:
         schema_extra = {

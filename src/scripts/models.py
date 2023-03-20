@@ -7,6 +7,7 @@ import settings
 from datetime import datetime
 from typing import Optional, Dict
 from fastapi import HTTPException, status
+from collections import Counter
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import (
@@ -16,7 +17,9 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 from xgboost import XGBClassifier
-from utils.functions import folder_inspection
+from imblearn.under_sampling import RandomUnderSampler
+from imblearn.over_sampling import RandomOverSampler
+from utils.functions import folder_inspection, delete_by_path
 
 warnings.filterwarnings("ignore")
 path_base = settings.PATH_BASE
@@ -96,10 +99,11 @@ def train_binary_cls_model(
     grid_search_cv: Optional[bool],
     grid_search_cv_params: Optional[Dict],
     random_state: Optional[int],
+    balancing_methodology: Optional[str],
 ):
     try:
         # Review if args are coherent
-        # GridSearchCV
+        ## GridSearchCV
         if grid_search_cv and (
             grid_search_cv_params is None or len(grid_search_cv_params) == 0
         ):
@@ -108,7 +112,7 @@ def train_binary_cls_model(
             )
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST)
 
-        # model_name
+        ## model_name
         if model_name is not None and model_name not in settings.MODELS_ALLOWED:
             logging.error(
                 f"model_name got unexpected value. Possible models are: {settings.MODELS_ALLOWED}"
@@ -116,6 +120,20 @@ def train_binary_cls_model(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"model_name got unexpected value. Possible models are: {settings.MODELS_ALLOWED}",
+            )
+
+        ## balancing_methodology
+        if balancing_methodology is not None and balancing_methodology not in [
+            "balanced",
+            "under",
+            "over",
+        ]:
+            logging.error(
+                "balancing_methodology got unexpected value. Possible methodologies are: 'balanced','under-sampling','over-sampling'."
+            )
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="balancing_methodology got unexpected value. Possible methodologies are: 'balanced','under-sampling','over-sampling'.",
             )
 
         logging.info(
@@ -131,20 +149,60 @@ def train_binary_cls_model(
             model_name = "xgb"
         logging.info(f"Configuring model {model_name}...")
         logging.info(f"Custom Params for model: {model_custom_params}.")
-        if model_name == "log-reg":
-            model = (
-                LogisticRegression()
-                if model_custom_params is None and len(model_custom_params) == 0
-                else LogisticRegression(**model_custom_params)
-            )
-            model_fit = model.fit(X_train, y_train)
-        elif model_name == "xgb":
-            model = (
-                XGBClassifier(random_state=random_state)
-                if model_custom_params is None and len(model_custom_params) == 0
-                else XGBClassifier(random_state=random_state, **model_custom_params)
-            )
-            model_fit = model.fit(X_train, y_train)
+
+        ## Balancing method
+        if balancing_methodology == "under":
+            random_undersampler = RandomUnderSampler(random_state=random_state)
+            X_train, y_train = random_undersampler.fit_resample(X_train, y_train)
+        if balancing_methodology == "over":
+            random_oversampler = RandomOverSampler(random_state=random_state)
+            X_train, y_train = random_oversampler.fit_resample(X_train, y_train)
+        if balancing_methodology == "balanced":
+            if model_name == "log-reg":
+                model = (
+                    LogisticRegression(class_weight="balanced")
+                    if model_custom_params is None and len(model_custom_params) == 0
+                    else LogisticRegression(
+                        class_weight="balanced", **model_custom_params
+                    )
+                )
+                model_fit = model.fit(X_train, y_train)
+            elif model_name == "xgb":
+                counter = Counter(y_train["atraso_15"].tolist())
+                scale_pos_weight_value = counter[0] / counter[1]
+                model = (
+                    XGBClassifier(
+                        scale_pos_weight=scale_pos_weight_value,
+                        random_state=random_state,
+                    )
+                    if model_custom_params is None and len(model_custom_params) == 0
+                    else XGBClassifier(
+                        scale_pos_weight=scale_pos_weight_value,
+                        random_state=random_state,
+                        **model_custom_params,
+                    )
+                )
+                model_fit = model.fit(X_train, y_train)
+        else:
+            if model_name == "log-reg":
+                model = (
+                    LogisticRegression()
+                    if model_custom_params is None and len(model_custom_params) == 0
+                    else LogisticRegression(**model_custom_params)
+                )
+                model_fit = model.fit(X_train, y_train)
+            elif model_name == "xgb":
+                model = (
+                    XGBClassifier(
+                        random_state=random_state,
+                    )
+                    if model_custom_params is None and len(model_custom_params) == 0
+                    else XGBClassifier(
+                        random_state=random_state,
+                        **model_custom_params,
+                    )
+                )
+                model_fit = model.fit(X_train, y_train)
 
         # GridSearchCV
         logging.info(f"GridSearchCV for model: {grid_search_cv}")
