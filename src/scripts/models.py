@@ -36,14 +36,6 @@ def get_model_filenames():
     return result
 
 
-def delete_modelname(
-    path: Optional[str],
-):
-    path = os.path.join(models_path, path)
-    deleted = delete_by_path(path)
-    return deleted
-
-
 def model_classification_report(y_test_filename, y_predicted_filename):
     try:
         # Read Data Files
