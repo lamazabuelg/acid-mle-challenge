@@ -2,7 +2,7 @@ name: cloudrun-deploy
 on:
   push:
     branches:
-      - develop
+      - main
 jobs:
   setup-build-publish-deploy:
     name: Setup, Build, Publish, and Deploy
@@ -38,4 +38,4 @@ jobs:
         gcloud run deploy ${{ secrets.GCP_APPLICATION }} --image gcr.io/${{ secrets.GCP_PROJECT }}/${{ secrets.GCP_APPLICATION }} \
         --platform managed \
         --allow-unauthenticated \
-        --memory 512M
+        --memory 2148M

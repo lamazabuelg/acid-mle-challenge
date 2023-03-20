@@ -151,10 +151,8 @@ def predict(request_body: PredictionSchema):
 )
 def delete_by_name(path: str):
     """Given a model path to delete into the 'src/models/' folder in repository, this functions delete that model.
-
     **Args:**
         path (str): Desired model path to delete. For example 'My_XGB_Classifier_model.pkl'.
-
     **Returns:**
         str: Message informing if the process was made succesfully or not.
     """
