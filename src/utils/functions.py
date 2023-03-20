@@ -27,7 +27,7 @@ def folder_inspection(path: str):
         logging.error(f"Folder {os.path.basename(path)} couldn't be found.")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Path '{os.path.basename(path)}' wasn't found into 'src/files/' directory.",
+            detail=f"Path '{os.path.basename(path)}' wasn't found in directory.",
         )
 
 
@@ -40,7 +40,19 @@ def download_by_path(path: str):
         logging.error(f"File {os.path.basename(path)} couldn't be found.")
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Path '{os.path.basename(path)}' wasn't found into 'src/files/' directory.",
+            detail=f"Path '{os.path.basename(path)}' wasn't found in directory.",
+        )
+
+
+def delete_by_path(path: str):
+    try:
+        os.remove(path)
+        return f"Succesfully deleted {path}."
+    except:
+        logging.error(f"File {os.path.basename(path)} couldn't be found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Path '{os.path.basename(path)}' wasn't found in directory.",
         )
 
 
