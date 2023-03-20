@@ -118,8 +118,10 @@ def get_features_from_df(
     if categorical_features is not None or len(categorical_features) > 0:
         # categorical_feature exist in DataFrame
         for feature in categorical_features:
-            if feature not in list(
-                set([re.sub(r"_.*", "", col) for col in df.columns])
+            if (
+                feature
+                not in list(set([re.sub(r"_.*", "", col) for col in df.columns]))
+                and feature not in df.columns
             ):
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
